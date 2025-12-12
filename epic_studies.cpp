@@ -416,7 +416,7 @@ void epic_studies(const char* fileList){
                             hadron_PhT_mc = hadron_4vec_mc.Perp(zAxis_mc);
                             //
                             hadron_y_mc = (MC_ProtonBeam.Dot(photon_hadron_noBoost_mc))/(MC_ProtonBeam.Dot(MC_ElectronBeam));
-                            if(hadron_Q2_mc >= 1 && hadron_z_mc < 1 && hadron_z_mc > 0 && hadron_xB_mc > 0 && hadron_xB_mc < 1) HadronTreeMC.Fill();
+                            if(hadron_eta_mc >= -3.5 && hadron_eta_mc <= 3.5 && hadron_Q2_mc >= 1 && hadron_z_mc < 1 && hadron_z_mc > 0 && hadron_xB_mc > 0 && hadron_xB_mc < 1) HadronTreeMC.Fill();
                         }
                     }
                 }
