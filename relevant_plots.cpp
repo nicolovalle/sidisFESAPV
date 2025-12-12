@@ -179,7 +179,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     // -- hadron
     double hadron_mom, hadron_Q2, hadron_xB, hadron_xF, hadron_z, hadron_PhT, hadron_Phi_h, hadron_Phi_s, hadron_Phi_lab, hadron_Theta, hadron_eta, hadron_y, hadron_W, hadron_Mx;
     double helicity, eps, hadron_px, hadron_py, hadron_pz, el_px, el_py, el_pz, el_theta, el_phi, el_eta, el_mom, pr_mom, pr_px, pr_py, pr_pz, pr_phi, pr_theta, pr_eta;
-    double rec_pdg, good_PID, el_rec_pdg;
+    double rec_pdg, good_PID, el_rec_pdg, rec_pdg_mc;
     double el_ass_rec_pdg, el_ass_px, el_ass_py, el_ass_pz, el_ass_theta, el_ass_phi, el_ass_eta, el_ass_mom;
     double hadron_E;
     //
@@ -192,7 +192,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     double hadron_Phi_h_all, hadron_Phi_s_all, hadron_Phi_lab_all, hadron_Theta_all, hadron_eta_all, hadron_y_all, hadron_W_all, hadron_Mx_all;
     double hel_all, eps_all, hadron_px_all, hadron_py_all, hadron_pz_all;
     double good_PID_all, pdg_all;
-    double hadron_all_index, index_all;
+    double hadron_index, index_all;
 
     //--- input file
     string inputDirStr = inputDir;
@@ -245,8 +245,9 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     }
 
     //Hadron reco
-    chainHadron_Reco.SetBranchAddress("hadron_index", &hadron_mc_index);
+    chainHadron_Reco.SetBranchAddress("hadron_index", &hadron_index);
     chainHadron_Reco.SetBranchAddress("hadron_pdg", &rec_pdg);
+    chainHadron_Reco.SetBranchAddress("hadron_pdg_mc", &rec_pdg_mc);
     chainHadron_Reco.SetBranchAddress("hadron_good_PID", &good_PID);
     chainHadron_Reco.SetBranchAddress("hadron_px", &hadron_px);
     chainHadron_Reco.SetBranchAddress("hadron_py", &hadron_py);
@@ -268,12 +269,12 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     //chainHadron_Reco.SetBranchAddress("hadron_Mx", &hadron_Mx);
 
     //Hadron MC
-    chainHadron_MC.SetBranchAddress("hadron_index", &index_mc);
+    chainHadron_MC.SetBranchAddress("hadron_index_mc", &index_mc);
     // Optional: if present, use MC PDG to select the hadron species
     double mc_pdg = 0;
-    bool has_mc_pdg = (chainHadron_MC.SetBranchAddress("hadron_pdg_mc", &mc_pdg) == 0);
-    if (!has_mc_pdg) has_mc_pdg = (chainHadron_MC.SetBranchAddress("hadron_pdg", &mc_pdg) == 0);
-
+    //bool has_mc_pdg = (chainHadron_MC.SetBranchAddress("hadron_pdg_mc", &mc_pdg) == 0);
+    //if (!has_mc_pdg) has_mc_pdg = (chainHadron_MC.SetBranchAddress("hadron_pdg", &mc_pdg) == 0);
+    chainHadron_MC.SetBranchAddress("hadron_pdg_mc", &mc_pdg);
     chainHadron_MC.SetBranchAddress("hadron_mom_mc", &hadron_mom_mc);
     chainHadron_MC.SetBranchAddress("hadron_Q2_mc", &hadron_Q2_mc);
     chainHadron_MC.SetBranchAddress("hadron_xB_mc", &hadron_xB_mc);
@@ -295,7 +296,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     chainHadron_MC.SetBranchAddress("hadron_pz_mc", &hadron_pz_mc);
 
     // Interesting hadron --- reco info
-    treeHadron.Branch("mc_index", &hadron_mc_index, "mc_index/I");
+    treeHadron.Branch("mc_index", &hadron_index, "mc_index/I");
     treeHadron.Branch("rec_pdg", &rec_pdg, "rec_pdg/D");
     treeHadron.Branch("good_PID", &good_PID, "good_PID/D");
     treeHadron.Branch("px", &hadron_px, "hadron_px/D");
@@ -379,7 +380,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     const auto log_bins_xB = make_bins(bin, xmin_xB, xmax_xB);
 
     TH2D had_Q2VsXb_MC (Form("%s_Q2VsXb_MC", tag.Data()), Form("Correlation Q^{2} vs x_{B}  |  MC %s ; x_{B}; Q^{2} [GeV^{2}]",label.Data()), bin, log_bins_xB.data(), bin, log_bins_Q2.data());
-    TH2D had_PhTvsZ_MC (Form("%s_PhTvsZ_MC", tag.Data()), Form("Correlation P_{hT} vs Z  |  MC %s ; z; P_{hT} [GeV]",label.Data()), bin, 0, 1, bin, 0, 2);
+    TH2D had_PhTvsZ_MC (Form("%s_PhTvsZ_MC", tag.Data()), Form("Correlation P_{hT} vs Z  |  MC %s ; z; P_{hT} [GeV]",label.Data()), bin, 0, 1, bin, 0, 3);
 
     TH1D had_evnt_chi2 (Form("%s_evnt_chi2", tag.Data()), Form("#chi^{2} EventBuilder PID | %s ; only EventBuilder | 1.2 < Mom < 8 GeV ; #chi^{2}; count",label.Data()), bin, -8, 8);
     TH1D had_m (Form("%s_best_mass", tag.Data()), Form("m extracted from #beta | %s ; 1.2 < Mom < 8 GeV ; m [GeV]; count",label.Data()), bin, 0, 1);
@@ -387,7 +388,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     TH1D had_Mx (Form("%s_missing_mass", tag.Data()), Form("missing mass | %s ; 1.2 < Mom < 8 GeV ; M_{x} [GeV]; count",label.Data()), bin, 0, 60);
 
     //--- Mom
-    TH2D had_MomVsPhT (Form("%s_MomVsPhT", tag.Data()), Form("Correlation Mom vs P_{hT}  |  %s ; P_{hT} [GeV]; Mom [GeV]",label.Data()), bin, 0, 2, bin, 0, 20);
+    TH2D had_MomVsPhT (Form("%s_MomVsPhT", tag.Data()), Form("Correlation Mom vs P_{hT}  |  %s ; P_{hT} [GeV]; Mom [GeV]",label.Data()), bin, 0, 3, bin, 0, 20);
     TH2D had_MomVsXb (Form("%s_MomVsXb", tag.Data()), Form("Correlation Mom vs x_{B}  |  %s ; x_{B}; Mom [GeV]",label.Data()), bin, log_bins_xB.data(), bin, 0, 20);
     TH2D had_MomVsXf (Form("%s_MomVsXf", tag.Data()), Form("Correlation Mom vs x_{F}  |  %s ; x_{F}; Mom [GeV]",label.Data()), bin, -0.5, 0.5, bin, 0, 20);
     TH2D had_MomVsZ (Form("%s_MomVsZ", tag.Data()), Form("Correlation Mom vs Z  |  %s ; z; Mom [GeV]",label.Data()), bin, 0, 1, bin, 0, 20);
@@ -400,16 +401,16 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     TH2D had_Q2VsXb (Form("%s_Q2VsXb", tag.Data()), Form("Correlation Q^{2} vs x_{B}  |  %s ; x_{B}; Q^{2} [GeV^{2}]",label.Data()), bin, log_bins_xB.data(), bin, log_bins_Q2.data());
     TH2D had_Q2VsXf (Form("%s_Q2VsXf", tag.Data()), Form("Correlation Q^{2} vs x_{F}  |  %s ; x_{F}; Q^{2} [GeV^{2}]",label.Data()), bin, -0.5, 0.5, bin, log_bins_Q2.data());
     TH2D had_Q2VsMom (Form("%s_Q2VsMom", tag.Data()), Form("Correlation Q^{2} vs Mom  |  %s ; Mom [GeV]; Q^{2} [GeV^{2}]",label.Data()), bin, 0, 20, bin, log_bins_Q2.data());
-    TH2D had_Q2VsPhT (Form("%s_Q2VsPhT", tag.Data()), Form("Correlation Q^{2} vs P_{hT}  |  %s ; P_{hT} [GeV]; Q^{2} [GeV^{2}]",label.Data()), bin, 0, 2, bin, log_bins_Q2.data());
+    TH2D had_Q2VsPhT (Form("%s_Q2VsPhT", tag.Data()), Form("Correlation Q^{2} vs P_{hT}  |  %s ; P_{hT} [GeV]; Q^{2} [GeV^{2}]",label.Data()), bin, 0, 3, bin, log_bins_Q2.data());
     TH2D had_Q2VsZ (Form("%s_Q2VsZ", tag.Data()), Form("Correlation Q^{2} vs Z  |  %s ; z; Q^{2} [GeV^{2}]",label.Data()), bin, 0, 1, bin, log_bins_Q2.data());
     TH2D had_Q2VsY (Form("%s_Q2VsY", tag.Data()), Form("Correlation Q^{2} vs Y  |  %s ; y; Q^{2} [GeV^{2}]",label.Data()), bin, 0.0, 1.0, bin, log_bins_Q2.data());
     TH2D had_Q2VsEta (Form("%s_Q2VsEta", tag.Data()), Form("Correlation Q^{2} vs Eta  |  %s ; Eta; Q^{2} [GeV^{2}]",label.Data()), bin, -3, 3.5, bin, log_bins_Q2.data());
     TH2D had_Q2VsPhi_h (Form("%s_Q2VsPhi_h", tag.Data()), Form("Correlation Q^{2} vs #Phi_{h}  |  %s ; #Phi_{h} [Rad]; Q^{2} [GeV^{2}]",label.Data()), bin, -TMath::Pi(), TMath::Pi(), bin, log_bins_Q2.data());
     //--- PhT
-    TH2D had_PhTvsZ (Form("%s_PhTvsZ", tag.Data()), Form("Correlation P_{hT} vs Z  |  %s ; z; P_{hT} [GeV]",label.Data()), bin, 0, 1, bin, 0, 2);
-    TH2D had_PhTvsXb (Form("%s_PhTvsXb", tag.Data()), Form("Correlation P_{hT} vs x_{B}  |  %s ; x_{B}; P_{hT} [GeV]",label.Data()), bin, log_bins_xB.data(), bin, 0, 2);
-    TH2D had_PhTvsEta (Form("%s_PhTvsEta", tag.Data()), Form("Correlation P_{hT} vs Eta  |  %s ; Eta; P_{hT} [GeV]",label.Data()), bin, -3, 3.5, bin, 0, 2);
-    TH2D had_PhTvsPhi_h (Form("%s_PhTvsPhi_h", tag.Data()), Form("Correlation P_{hT} vs #Phi_{h}  |  %s ; #Phi_{h} [Rad]; P_{hT} [GeV]",label.Data()), bin, -TMath::Pi(), TMath::Pi(), bin, 0, 2);
+    TH2D had_PhTvsZ (Form("%s_PhTvsZ", tag.Data()), Form("Correlation P_{hT} vs Z  |  %s ; z; P_{hT} [GeV]",label.Data()), bin, 0, 1, bin, 0, 3);
+    TH2D had_PhTvsXb (Form("%s_PhTvsXb", tag.Data()), Form("Correlation P_{hT} vs x_{B}  |  %s ; x_{B}; P_{hT} [GeV]",label.Data()), bin, log_bins_xB.data(), bin, 0, 3);
+    TH2D had_PhTvsEta (Form("%s_PhTvsEta", tag.Data()), Form("Correlation P_{hT} vs Eta  |  %s ; Eta; P_{hT} [GeV]",label.Data()), bin, -3, 3.5, bin, 0, 3);
+    TH2D had_PhTvsPhi_h (Form("%s_PhTvsPhi_h", tag.Data()), Form("Correlation P_{hT} vs #Phi_{h}  |  %s ; #Phi_{h} [Rad]; P_{hT} [GeV]",label.Data()), bin, -TMath::Pi(), TMath::Pi(), bin, 0, 3);
     //--- z
     TH2D had_zVsXb (Form("%s_zVsXb", tag.Data()), Form("Correlation Z vs x_{B}  |  %s ; x_{B}; z",label.Data()), bin, log_bins_xB.data(), bin, 0, 1);
     TH2D had_zVsXf (Form("%s_zVsXf", tag.Data()), Form("Correlation Z vs x_{F}  |  %s ; x_{F}; z",label.Data()), bin, -0.5, 0.5, bin, 0, 1);
@@ -475,7 +476,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
         chainHadron_MC.GetEntry(i);
         if (i % 100000 == 0) cout << "MC entry: " << i << "/" << nEntries_hadMC << endl;
         if(hadron_y_mc <= 0.99 && hadron_y_mc >= 0.01){
-            if (has_mc_pdg && ((int)mc_pdg != target_pdg)) continue;
+            if (mc_pdg != target_pdg) continue;
             double bin_xQ2 = getBinIndex_xQ2(hadron_xB_mc, hadron_Q2_mc);
             double bin_zPt = getBinIndex_zPt(hadron_z_mc, hadron_PhT_mc);
             if(bin_xQ2 >= 0){
@@ -511,17 +512,19 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     for (Long64_t i = 0; i < nEntries_had; i++) {
         chainHadron_Reco.GetEntry(i);
         if (i % 100000 == 0) cout << "RECO entry: " << i << "/" << nEntries_had << endl;
-        //if(rec_pdg == target_pdg && hadron_z < 1 && hadron_Q2 >= 1){
-            if(hadron_y <= 0.99 && hadron_y >= 0.01){ //same request as in epic_studies
-                double bin_xQ2 = getBinIndex_xQ2(hadron_xB, hadron_Q2);
-                double bin_zPt = getBinIndex_zPt(hadron_z, hadron_PhT);
-                if(bin_xQ2 >= 0){
-                    if(bin_zPt >= 0){
-                        had_efficiency_xQ2_zPt_2[bin_xQ2-1][bin_zPt-1].push_back(hadron_y); // compenso il fatto che i bin partano da 1
+            if(rec_pdg == target_pdg && hadron_z < 1 && hadron_Q2 >= 1){
+                if(hadron_y <= 0.99 && hadron_y >= 0.01){ //same request as in epic_studies
+                    double bin_xQ2 = getBinIndex_xQ2(hadron_xB, hadron_Q2);
+                    double bin_zPt = getBinIndex_zPt(hadron_z, hadron_PhT);
+                    if(bin_xQ2 >= 0){
+                        if(bin_zPt >= 0){ // here we have reconstructed pion, but we do not ask if they are also MC pion -> contamination
+                            had_efficiency_xQ2_zPt_2[bin_xQ2-1][bin_zPt-1].push_back(hadron_y); // compenso il fatto che i bin partano da 1
+                            had_purity_xQ2_zPt_den[bin_xQ2-1][bin_zPt-1].push_back(hadron_y_all);
+                        }
                     }
                 }
             }
-            if(hadron_y <= 0.99 && hadron_y >= 0.01 && good_PID == 0 && rec_pdg == target_pdg && hadron_z < 1 && hadron_Q2 >= 1){ //same request as in epic_studies + goodPID + specific pdg
+            if(hadron_y <= 0.99 && hadron_y >= 0.01 && good_PID == 0 && rec_pdg == target_pdg && rec_pdg_mc == target_pdg && hadron_z < 1 && hadron_Q2 >= 1){ //same request as in epic_studies + goodPID + specific pdg
                 double bin_xQ2 = getBinIndex_xQ2(hadron_xB, hadron_Q2);
                 double bin_zPt = getBinIndex_zPt(hadron_z, hadron_PhT);
                 double bin_z = getBinIndex_z(hadron_z);
@@ -529,6 +532,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
                 if(bin_xQ2 >= 0){
                     if(bin_zPt >= 0){
                         had_efficiency_xQ2_zPt[bin_xQ2-1][bin_zPt-1].push_back(hadron_y);
+                        had_purity_xQ2_zPt_num[bin_xQ2-1][bin_zPt-1].push_back(hadron_y_all);
                     }
                 }
                 // Mom
@@ -578,7 +582,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
                 double n2 = had_efficiency_xQ2_zPt_2[ix][iz].size();
                 double n_all = had_purity_xQ2_zPt_num[ix][iz].size();
                 double n_all_den = had_purity_xQ2_zPt_den[ix][iz].size();
-                double eff = (n > 0 || n2 > 0) ? n/n2 : 0.0;
+                double eff = (n > 0 || n_mc > 0) ? n/n_mc : 0.0;
                 double err = (n_mc > 0) ? sqrt(eff * (1.0 - eff) / n_mc) : 0.0;
                 double purity = (n > 0 || n_all > 0) ? n/n_all_den : 0.0;
                 //hist_efficiency_xQ2_zPt[ix]->SetBinError(..., err);
@@ -791,8 +795,8 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     }
 
     for (int ix = 0; ix < nBin_xQ2; ++ix) {
-        hist_efficiency_xQ2_zPt[ix]->SetMinimum(global_min);
-        hist_efficiency_xQ2_zPt[ix]->SetMaximum(global_max);
+        hist_efficiency_xQ2_zPt[ix]->SetMinimum(0); // now we use 0 and 1
+        hist_efficiency_xQ2_zPt[ix]->SetMaximum(1);
     }
 
     // exclude zmin = zmax
@@ -1068,8 +1072,8 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     }
 
     for (int ix = 0; ix < nBin_xQ2; ++ix) {
-        hist_purity_xQ2_zPt[ix]->SetMinimum(0.8);
-        hist_purity_xQ2_zPt[ix]->SetMaximum(global_max_all);
+        hist_purity_xQ2_zPt[ix]->SetMinimum(0);
+        hist_purity_xQ2_zPt[ix]->SetMaximum(1);
     }
 
     // exclude zmin = zmax
@@ -1266,7 +1270,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     c_layout_all->Update();
 
     c_layout_all->cd();
-    TLatex *globalTitle_all = new TLatex(0.12, 0.95, Form("%s 4D Purity Distribution",tag.Data()));
+    TLatex *globalTitle_all = new TLatex(0.12, 0.95, Form("%s 4D Purity Distribution",label.Data()));
     globalTitle_all->SetNDC(true);
     //globalTitle->SetTextFont(62);
     globalTitle_all->SetTextSize(0.04);
