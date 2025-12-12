@@ -300,7 +300,7 @@ void epic_studies(const char* fileList){
                         }
                     }
                 }
-                if(pdg == 11 || pdg2 == 211 || pdg2 == 321){ //all hadrons
+                if(pdg == 11 || pdg2 == 211 || pdg2 == 321 || pdg2 == 2212){ //all hadrons
                     //count2++;
                     if(parentsIndex[i] > -1){
                         //--- loops on the reconstructed particles and associations with the simulated particle
