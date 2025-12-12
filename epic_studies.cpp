@@ -139,11 +139,12 @@ void epic_studies(const char* fileList){
     //--- hadron
     double hadron_px_mc, hadron_py_mc, hadron_pz_mc, hadron_mom_mc, hadron_Q2_mc, hadron_xB_mc, hadron_xF_mc, hadron_z_mc, hadron_PhT_mc;
     double hadron_Phi_lab_mc, hadron_Phi_h_mc, hadron_Phi_s_mc, hadron_Theta_mc, hadron_eta_mc, hadron_y_mc, hadron_W_mc, hadron_Mx_mc;
+    double hadron_pdg_mc;
     double hel_mc, eps_mc;
     double hadron_px, hadron_py, hadron_pz, hadron_mom, hadron_Q2, hadron_xB, hadron_xF, hadron_z, hadron_PhT;
     double hadron_Phi_lab, hadron_Phi_h, hadron_Phi_s, hadron_Theta, hadron_eta, hadron_y, hadron_W, hadron_Mx;
     double hel, eps, hadron_pdg;
-    double hadron_goodPID, hadron_index;
+    double hadron_goodPID, hadron_index, hadron_index_mc;
     //int hadron_count;
 
     //--- Trees
@@ -159,7 +160,8 @@ void epic_studies(const char* fileList){
     ElectronTreeMC.Branch("el_eta_mc", &el_eta_mc, "el_eta_mc/D");
 
     TTree HadronTreeMC("HadronTree_MC", "");
-    HadronTreeMC.Branch("hadron_index", &hadron_index, "hadron_index/D");
+    HadronTreeMC.Branch("hadron_index_mc", &hadron_index_mc, "hadron_index_mc/D");
+    HadronTreeMC.Branch("hadron_pdg_mc", &hadron_pdg_mc, "hadron_pdg_mc/D");
     HadronTreeMC.Branch("hadron_px_mc", &hadron_px_mc, "hadron_px_mc/D");
     HadronTreeMC.Branch("hadron_py_mc", &hadron_py_mc, "hadron_py_mc/D");
     HadronTreeMC.Branch("hadron_pz_mc", &hadron_pz_mc, "hadron_pz_mc/D");
@@ -168,17 +170,17 @@ void epic_studies(const char* fileList){
     HadronTreeMC.Branch("hadron_xB_mc", &hadron_xB_mc, "hadron_xB_mc/D");
     HadronTreeMC.Branch("hadron_xF_mc", &hadron_xF_mc, "hadron_xF_mc/D");
     HadronTreeMC.Branch("hadron_z_mc", &hadron_z_mc, "hadron_z_mc/D");
-    HadronTreeMC.Branch("hadron_PhT_mc", &hadron_PhT_mc, "hadron_PhT_mc/D");
+    HadronTreeMC.Branch("hadron_PhT_mc", &hadron_PhT_mc, "hadron_z_mc/D");
     HadronTreeMC.Branch("hadron_Phi_lab_mc", &hadron_Phi_lab_mc, "hadron_Phi_lab_mc/D");
     HadronTreeMC.Branch("hadron_Phi_h_mc", &hadron_Phi_h_mc, "hadron_Phi_h_mc/D");
-    HadronTreeMC.Branch("hadron_Phi_s_mc", &hadron_Phi_s_mc, "hadron_Phi_s_mc/D");
+    //HadronTreeMC.Branch("hadron_Phi_s_mc", &hadron_Phi_s_mc, "hadron_Phi_s_mc/D");
     HadronTreeMC.Branch("hadron_Theta_mc", &hadron_Theta_mc, "hadron_Theta_mc/D");
     HadronTreeMC.Branch("hadron_eta_mc", &hadron_eta_mc, "hadron_eta_mc/D");
     HadronTreeMC.Branch("hadron_y_mc", &hadron_y_mc, "hadron_y_mc/D");
-    HadronTreeMC.Branch("hadron_W_mc", &hadron_W_mc, "hadron_W_mc/D");
-    HadronTreeMC.Branch("hadron_Mx_mc", &hadron_Mx_mc, "hadron_Mx_mc/D");
-    HadronTreeMC.Branch("helicity_mc", &hel_mc, "helicity_mc/D");
-    HadronTreeMC.Branch("epsilon_mc", &eps_mc, "epsilon_mc/D");
+    //HadronTreeMC.Branch("hadron_W_mc", &hadron_W_mc, "hadron_W_mc/D");
+    //HadronTreeMC.Branch("hadron_Mx_mc", &hadron_Mx_mc, "hadron_Mx_mc/D");
+    //HadronTreeMC.Branch("helicity_mc", &hel_mc, "helicity_mc/D");
+    //HadronTreeMC.Branch("epsilon_mc", &eps_mc, "epsilon_mc/D");
 
     //--- Reco
     TTree ElectronTreeRECO("ElectronTree_RECO", "");
@@ -198,29 +200,30 @@ void epic_studies(const char* fileList){
     HadronTreeRECO.Branch("hadron_py", &hadron_py, "hadron_py/D");
     HadronTreeRECO.Branch("hadron_pz", &hadron_pz, "hadron_pz/D");
     HadronTreeRECO.Branch("hadron_pdg", &hadron_pdg, "hadron_pdg/D");
+    HadronTreeRECO.Branch("hadron_pdg_mc", &hadron_pdg_mc, "hadron_pdg_mc/D");
     HadronTreeRECO.Branch("hadron_good_PID", &hadron_goodPID, "hadron_good_PID/D");
     HadronTreeRECO.Branch("hadron_mom", &hadron_mom, "hadron_mom/D");
     HadronTreeRECO.Branch("hadron_Q2", &hadron_Q2, "hadron_Q2/D");
     HadronTreeRECO.Branch("hadron_xB", &hadron_xB, "hadron_xB/D");
     HadronTreeRECO.Branch("hadron_xF", &hadron_xF, "hadron_xF/D");
     HadronTreeRECO.Branch("hadron_z", &hadron_z, "hadron_z/D");
-    HadronTreeRECO.Branch("hadron_PhT", &hadron_PhT, "hadron_PhT/D");
+    HadronTreeRECO.Branch("hadron_PhT", &hadron_PhT, "hadron_z/D");
     HadronTreeRECO.Branch("hadron_Phi_lab", &hadron_Phi_lab, "hadron_Phi_lab/D");
     HadronTreeRECO.Branch("hadron_Phi_h", &hadron_Phi_h, "hadron_Phi_h/D");
-    HadronTreeRECO.Branch("hadron_Phi_s", &hadron_Phi_s, "hadron_Phi_s/D");
+    //HadronTreeRECO.Branch("hadron_Phi_s", &hadron_Phi_s, "hadron_Phi_s/D");
     HadronTreeRECO.Branch("hadron_Theta", &hadron_Theta, "hadron_Theta/D");
     HadronTreeRECO.Branch("hadron_eta", &hadron_eta, "hadron_eta/D");
     HadronTreeRECO.Branch("hadron_y", &hadron_y, "hadron_y/D");
-    HadronTreeRECO.Branch("hadron_W", &hadron_W, "hadron_W/D");
-    HadronTreeRECO.Branch("hadron_Mx", &hadron_Mx, "hadron_Mx/D");
-    HadronTreeRECO.Branch("helicity", &hel, "helicity/D");
-    HadronTreeRECO.Branch("epsilon", &eps, "epsilon/D");
+    //HadronTreeRECO.Branch("hadron_W", &hadron_W, "hadron_W/D");
+    //HadronTreeRECO.Branch("hadron_Mx", &hadron_Mx, "hadron_Mx/D");
+    //HadronTreeRECO.Branch("helicity", &hel, "helicity/D");
+    //HadronTreeRECO.Branch("epsilon", &eps, "epsilon/D");
 
     //double count3 = 0;
     double event = -1;
     //--- output for debug
-    //std::ofstream csv("output.csv");
-    //csv << "event , status, parents, reco_pdg, true_pdg, px_reco, py_reco, pz_reco, mom_reco, px_true, py_true, pz_true, mom_true\n";
+    std::ofstream csv("output.csv");
+    csv << "event , status, parents, reco_pdg, true_pdg, px_reco, py_reco, pz_reco, mom_reco, px_true, py_true, pz_true, mom_true\n";
 
     //------------- pdg list
     //--- 11 electron
@@ -234,10 +237,15 @@ void epic_studies(const char* fileList){
     // status = 4 is the beam (ref 1767) in HepMC
     // status = 1 stable particle in the final state
 
+    //------------- Loop over events
+
     TLorentzVector ElectronScattered;
     TLorentzVector ElectronScattered_mc;
+    TLorentzVector ProtonScattered;
+    TLorentzVector ProtonScattered_mc;
+    TLorentzVector MC_ProtonBeam;
+    TLorentzVector MC_ElectronBeam;
 
-    //------------- Loop over events
     while(tree_reader.Next()) {
 
         //--- Useful vectors or variables
@@ -245,19 +253,15 @@ void epic_studies(const char* fileList){
         TVector3 ElBeam(0.,0.,-18.);
         const double m_p = 0.9382720813;  // GeV
         const double m_e = 0.00051099895; // GeV
-        double pz_e = -18.0;
+        double pz_e = -10.0;
         double p_e = std::abs(pz_e);
         double E_e = sqrt(p_e*p_e + m_e*m_e);
-        double pz_p = 275.0;
+        double pz_p = 100.0;
         double p_p = std::abs(pz_p);
         double E_p = sqrt(p_p*p_p + m_p*m_p);
-        TLorentzVector ProtonScattered;
-        TLorentzVector ProtonScattered_mc;
         TLorentzVector ElectronBeam(0., 0., pz_e, E_e);
         TLorentzVector ProtonBeam(0., 0., pz_p, E_p);
         TLorentzVector Lab = ElectronBeam + ProtonBeam;
-        TLorentzVector MC_ProtonBeam;
-        TLorentzVector MC_ElectronBeam;
         double currentPhi = 0;
         double currentMom = 0;
         TVector3 ScatElectron_mc;
@@ -277,7 +281,7 @@ void epic_studies(const char* fileList){
                         TVector3 Mom(partMomX[i],partMomY[i],partMomZ[i]);
                         double E = sqrt(0.9382720813*0.9382720813 + partMomX[i]*partMomX[i] + partMomY[i]*partMomY[i] + partMomZ[i]*partMomZ[i]);
                         MC_ProtonBeam.SetPxPyPzE(partMomX[i],partMomY[i],partMomZ[i], E);
-                        //event++;
+                        event++;
                         //csv << "----------------------------- event " << event << " ----------------------------" << endl;
                     }
                     if(partGenStat[i] == 4 && pdg == 11){ //beam+electron
@@ -290,13 +294,13 @@ void epic_studies(const char* fileList){
                             if(simuAssoc[j] == i){
                                 TVector3 ElMom(partMomX[i],partMomY[i],partMomZ[i]);
                                 TVector3 MomReco(trackMomX[recoAssoc[j]],trackMomY[recoAssoc[j]],trackMomZ[recoAssoc[j]]);
-                                //csv << event << ",  " << partGenStat[i] << ",  "  << parentsIndex[i] << ",  " << recPdg[j] << ",  " << pdg << ",  " << MomReco.X() << ",  " << MomReco.Y() << ",  " << MomReco.Z() << ",  " << MomReco.Mag() << ",  " << ElMom.X() << ",  " << ElMom.Y()  << ",  " << ElMom.Z() << ",  " << ElMom.Mag()  << "\n";
+                                csv << event << ",  " << partGenStat[i] << ",  "  << parentsIndex[i] << ",  " << recPdg[j] << ",  " << pdg << ",  " << MomReco.X() << ",  " << MomReco.Y() << ",  " << MomReco.Z() << ",  " << MomReco.Mag() << ",  " << ElMom.X() << ",  " << ElMom.Y()  << ",  " << ElMom.Z() << ",  " << ElMom.Mag()  << "\n";
                                 //count++;
                             }
                         }
                     }
                 }
-                if(pdg == 11 || pdg2 == 211 || pdg2 == 321 || pdg2 == 2212){ //all hadrons
+                if(pdg == 11 || pdg2 == 211 || pdg2 == 321){ //all hadrons
                     //count2++;
                     if(parentsIndex[i] > -1){
                         //--- loops on the reconstructed particles and associations with the simulated particle
@@ -313,6 +317,7 @@ void epic_studies(const char* fileList){
                                     el_theta_mc = ElMom.Theta();
                                     el_phi_mc = ElMom.Phi();
                                     el_mom_mc = ElMom.Mag();
+                                    if(el_mom_mc < 1) continue;
                                     currentPhi = ElMom.Theta();
                                     currentMom = ElMom.Mag();
                                     el_pdg = recPdg[j];
@@ -336,16 +341,16 @@ void epic_studies(const char* fileList){
                                         ElectronTreeMC.Fill();
                                         ElectronTreeRECO.Fill();
                                     }
-                                } else if (partPdg[i] == recPdg[j]){ //important request
+                                } if (std::abs(recPdg[j]) == 211 || std::abs(recPdg[j]) == 321 || std::abs(recPdg[j]) == 2212){ //important request
                                     TVector3 particle(partMomX[i],partMomY[i],partMomZ[i]);
                                     TVector3 reco_particle(trackMomX[recoAssoc[j]],trackMomY[recoAssoc[j]],trackMomZ[recoAssoc[j]]);
                                     double eta_particle = particle.PseudoRapidity();
                                     double eta = reco_particle.PseudoRapidity();
+                                    hadron_pdg_mc = partPdg[i];
+                                    hadron_index = i;
                                     //selection on eta to accept only particles within the detector acceptance, selection on y to accept only interesting particles (deep inelastic scattering+no bkg)
                                     if(eta >= -3.5 && eta <= 3.5 && el_y_mc >= 0.01 && el_y_mc <= 0.99){
-                                        hadron_px_mc = reco_particle.X(), hadron_py_mc = reco_particle.Y(), hadron_pz_mc = reco_particle.Z();
-                                        hadron_pdg = pdg;
-                                        int recpdg = (recPdg[j]);
+                                        hadron_pdg = (recPdg[j]);
                                         double goodPID_cont = goodnessOfPID[j];
                                         hadron_mom = reco_particle.Mag();
                                         TLorentzVector photon_hadron_noBoost = MC_ElectronBeam - ElectronScattered_mc;
@@ -355,7 +360,6 @@ void epic_studies(const char* fileList){
                                         hadron_y = el_y_mc;
                                         hadron_px = reco_particle.X(); hadron_py = reco_particle.Y(); hadron_pz = reco_particle.Z();
                                         hadron_index++;
-                                        hadron_pdg = pdg;
                                         hadron_mom = reco_particle.Mag();
                                         hadron_Q2 = -photon_hadron_noBoost.M2();
                                         hadron_xB = hadron_Q2 / (2 * MC_ProtonBeam.Dot(photon_hadron_noBoost));
@@ -363,7 +367,8 @@ void epic_studies(const char* fileList){
                                         hadron_Theta = reco_particle.Theta(); hadron_Phi_lab = reco_particle.Phi();
                                         hadron_z = (MC_ProtonBeam * hadron_noBoost) / (MC_ProtonBeam * photon_hadron_noBoost);
                                         hadron_goodPID = goodPID_cont;
-                                        //if (hadron_Q2 < 1) std::cout << "ev: " << event << "   mom: " << hadron_mom << "  el: " << ElectronScattered_mc.E() << std::endl;
+                                        //if (hadron_Q2 < 1) std::cout << "ev: " << event << "   mom: " << hadron_mom << "  el: " << ElectronScattered_mc.Px() << ", "  << ElectronScattered_mc.Py() << ", " <<  ElectronScattered_mc.Pz() << ", " << ElectronScattered_mc.E()
+                                        //<< "    " << MC_ElectronBeam.Px() << ", " << MC_ElectronBeam.Py() << ", " << MC_ElectronBeam.Pz() << ", " << MC_ElectronBeam.E() << std::endl;
                                         TLorentzVector hadron_4vec = hadron_noBoost;
                                         TLorentzVector photon_hadron_4vec = photon_hadron_noBoost;
                                         // boost gamma*N - mandatory for the extraction of P_hT, Phi_h and Phi_s
@@ -381,11 +386,37 @@ void epic_studies(const char* fileList){
                                         double hadron_Phy = PhT_vector.Dot(yAxis);
                                         hadron_Phi_h = TMath::ATan2(hadron_Phy, -hadron_Phx);
                                         //---filling
-                                        HadronTreeMC.Fill();
                                         HadronTreeRECO.Fill();
                                     }
                                 }
                             }
+                        } // no reco cycle
+                        if ((pdg2 == 211 || pdg2 == 321 || pdg2 == 2212) && partGenStat[i] == 1){
+                            TVector3 mc_particle(partMomX[i],partMomY[i],partMomZ[i]);
+                            hadron_index_mc = i;
+                            hadron_px_mc = mc_particle.X(), hadron_py_mc = mc_particle.Y(), hadron_pz_mc = mc_particle.Z();
+                            hadron_pdg_mc = partPdg[i], hadron_mom_mc = mc_particle.Mag();
+                            TLorentzVector photon_hadron_noBoost_mc = MC_ElectronBeam - ElectronScattered_mc;
+                            double mass = partMass[i];
+                            double E_hadron_mc = sqrt(hadron_mom_mc*hadron_mom_mc + mass*mass);
+                            TLorentzVector hadron_noBoost_mc(mc_particle.X(), mc_particle.Y(), mc_particle.Z(), E_hadron_mc);
+                            hadron_Q2_mc = -photon_hadron_noBoost_mc.M2();
+                            hadron_xB_mc = hadron_Q2_mc / (2 * MC_ProtonBeam.Dot(photon_hadron_noBoost_mc));
+                            hadron_eta_mc = mc_particle.PseudoRapidity(), hadron_Theta_mc = mc_particle.Theta(); hadron_Phi_lab_mc = mc_particle.Phi();
+                            hadron_z_mc = (MC_ProtonBeam * hadron_noBoost_mc) / (MC_ProtonBeam * photon_hadron_noBoost_mc);
+                            //
+                            TLorentzVector hadron_4vec_mc = hadron_noBoost_mc;
+                            TLorentzVector photon_hadron_4vec_mc = photon_hadron_noBoost_mc;
+                            // boost gamma*N - mandatory for the extraction of P_hT, Phi_h and Phi_s
+                            TLorentzVector gammaN_mc = photon_hadron_noBoost_mc + MC_ProtonBeam;
+                            TVector3 boost_gammaN_mc = -gammaN_mc.BoostVector();
+                            hadron_4vec_mc.Boost(boost_gammaN_mc);
+                            photon_hadron_4vec_mc.Boost(boost_gammaN_mc);
+                            TVector3 zAxis_mc = photon_hadron_4vec_mc.Vect().Unit();
+                            hadron_PhT_mc = hadron_4vec_mc.Perp(zAxis_mc);
+                            //
+                            hadron_y_mc = (MC_ProtonBeam.Dot(photon_hadron_noBoost_mc))/(MC_ProtonBeam.Dot(MC_ElectronBeam));
+                            if(hadron_Q2_mc >= 1 && hadron_z_mc < 1 && hadron_z_mc > 0 && hadron_xB_mc > 0 && hadron_xB_mc < 1) HadronTreeMC.Fill();
                         }
                     }
                 }
