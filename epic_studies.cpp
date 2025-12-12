@@ -168,7 +168,7 @@ void epic_studies(const char* fileList){
     HadronTreeMC.Branch("hadron_xB_mc", &hadron_xB_mc, "hadron_xB_mc/D");
     HadronTreeMC.Branch("hadron_xF_mc", &hadron_xF_mc, "hadron_xF_mc/D");
     HadronTreeMC.Branch("hadron_z_mc", &hadron_z_mc, "hadron_z_mc/D");
-    HadronTreeMC.Branch("hadron_PhT_mc", &hadron_z_mc, "hadron_z_mc/D");
+    HadronTreeMC.Branch("hadron_PhT_mc", &hadron_PhT_mc, "hadron_PhT_mc/D");
     HadronTreeMC.Branch("hadron_Phi_lab_mc", &hadron_Phi_lab_mc, "hadron_Phi_lab_mc/D");
     HadronTreeMC.Branch("hadron_Phi_h_mc", &hadron_Phi_h_mc, "hadron_Phi_h_mc/D");
     HadronTreeMC.Branch("hadron_Phi_s_mc", &hadron_Phi_s_mc, "hadron_Phi_s_mc/D");
@@ -204,7 +204,7 @@ void epic_studies(const char* fileList){
     HadronTreeRECO.Branch("hadron_xB", &hadron_xB, "hadron_xB/D");
     HadronTreeRECO.Branch("hadron_xF", &hadron_xF, "hadron_xF/D");
     HadronTreeRECO.Branch("hadron_z", &hadron_z, "hadron_z/D");
-    HadronTreeRECO.Branch("hadron_PhT", &hadron_z, "hadron_z/D");
+    HadronTreeRECO.Branch("hadron_PhT", &hadron_z, "hadron_PhT/D");
     HadronTreeRECO.Branch("hadron_Phi_lab", &hadron_Phi_lab, "hadron_Phi_lab/D");
     HadronTreeRECO.Branch("hadron_Phi_h", &hadron_Phi_h, "hadron_Phi_h/D");
     HadronTreeRECO.Branch("hadron_Phi_s", &hadron_Phi_s, "hadron_Phi_s/D");
