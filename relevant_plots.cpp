@@ -370,8 +370,8 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     double bin = 150;
     double chi_min = 0.1;
     double chi_max = 2000;
-    const double xmin_xB = 1e-4, xmax_xB = 1;
-    const double xmin_Q2 = 1, xmax_Q2 = 100.;
+    const double xmin_xB = 5e-5, xmax_xB = 1;
+    const double xmin_Q2 = 1, xmax_Q2 = 2000.;
     auto make_bins = [](int bins, double min, double max){
         return CreateLogBinning(bins, min, max);
     };
