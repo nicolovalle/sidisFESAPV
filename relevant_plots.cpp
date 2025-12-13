@@ -1,5 +1,5 @@
 //-------------- Plotting relevant graphs
-//--- Authors: Lorenzo Polizzi (lorenzo.polizzi@unife.i), Sara Pucillo (sara.pucillo@cern.ch), Nicolò Valle (nicolo.valle@cern.ch)
+//--- Authors: Lorenzo Polizzi (lorenzo.polizzi@unife.it), Sara Pucillo (sara.pucillo@cern.ch), Nicolò Valle (nicolo.valle@cern.ch)
 #include <cstdlib>
 #include <iostream>
 #include <chrono>
@@ -26,6 +26,7 @@
 #include "TStyle.h"
 #include "TColor.h"
 #include "ePIC_style.C"
+#include <cstring>  // std::strstr
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -230,7 +231,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     }
 
     //--- output file
-    TString outputFile = Form("%s/Relevant_plots_2510_epic_%s.root", inputDirStr.c_str(), tag.Data());
+    TString outputFile = Form("Relevant_plots_2510_epic_%s.root", tag.Data());
     TFile outFile(outputFile, "RECREATE");
 
     //--- Here we collect all the variables from the ttree
@@ -590,9 +591,9 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
                 double n2 = had_efficiency_xQ2_zPt_2[ix][iz].size();
                 double n_all = had_purity_xQ2_zPt_num[ix][iz].size();
                 double n_all_den = had_purity_xQ2_zPt_den[ix][iz].size();
-                double eff = (n > 0 || n_mc > 0) ? n/n_mc : 0.0;
-                double err = (n_mc > 0) ? sqrt(eff * (1.0 - eff) / n_mc) : 0.0;
-                double purity = (n > 0 || n_all > 0) ? n/n_all_den : 0.0;
+                double eff = (n_mc > 0)? (double)n / (double)n_mc      : 0.0;
+                double err = (n_mc > 0)? sqrt(eff * (1.0 - eff) / n_mc) : 0.0;
+                double purity = (n_all_den > 0) ? (double)n / (double)n_all_den : 0.0;
                 //hist_efficiency_xQ2_zPt[ix]->SetBinError(..., err);
                 if (eff >= 1) eff = 1.0;
                 if (purity >= 1) purity = 1.0;
@@ -619,6 +620,172 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     }
 
 
+    //--- Statistical-uncertainty-like maps in (xB, Q2), inspired by https://arxiv.org/pdf/2211.15746 (Fig. 16).
+    //
+    // We build two maps in (xB,Q2):
+    //   (A)  1 / ( sqrt(N_mc)  * efficiency )
+    //   (B)  1 / ( sqrt(N_sel) * purity )
+    //
+    // Definitions (integrated over all (z,PhT) bins):
+    //   N_mc  = sum_zPt N(MC true target hadron)
+    //   N_sig = sum_zPt N(reco target hadron AND true target hadron AND goodPID)
+    //   N_sel = sum_zPt N(reco target hadron selection)  (includes contamination)
+    //   efficiency = N_sig / N_mc
+    //   purity     = N_sig / N_sel
+
+    vector<double> N_mc_xQ2(nBin_xQ2, 0.0);
+    vector<double> N_sig_xQ2(nBin_xQ2, 0.0);
+    vector<double> N_sel_xQ2(nBin_xQ2, 0.0);
+    vector<double> eff_xQ2(nBin_xQ2, 0.0);
+    vector<double> pur_xQ2(nBin_xQ2, 0.0);
+    vector<double> statOverEff_xQ2(nBin_xQ2, 0.0);
+    vector<double> statOverPur_xQ2(nBin_xQ2, 0.0);
+
+    for (int ix = 0; ix < nBin_xQ2; ++ix) {
+        for (int iz = 0; iz < nBin_zPt; ++iz) {
+            N_mc_xQ2[ix]  += (double) had_efficiency_xQ2_zPt_mc[ix][iz].size();
+            N_sig_xQ2[ix] += (double) had_efficiency_xQ2_zPt[ix][iz].size();
+
+            // IMPORTANT: use the same denominator you use for purity in the zPt histograms
+            // (i.e. had_purity_xQ2_zPt_den), not had_efficiency_xQ2_zPt_2 unless you are sure they are identical.
+            N_sel_xQ2[ix] += (double) had_purity_xQ2_zPt_den[ix][iz].size();
+        }
+
+        eff_xQ2[ix] = (N_mc_xQ2[ix]  > 0.0) ? (N_sig_xQ2[ix] / N_mc_xQ2[ix])  : 0.0;
+        pur_xQ2[ix] = (N_sel_xQ2[ix] > 0.0) ? (N_sig_xQ2[ix] / N_sel_xQ2[ix]) : 0.0;
+
+        statOverEff_xQ2[ix] = (N_mc_xQ2[ix] > 0.0 && eff_xQ2[ix] > 0.0)
+            ? 1.0 / (sqrt(N_mc_xQ2[ix]) * eff_xQ2[ix]) : 0.0;
+
+        statOverPur_xQ2[ix] = (N_sel_xQ2[ix] > 0.0 && pur_xQ2[ix] > 0.0)
+            ? 1.0 / (sqrt(N_sel_xQ2[ix]) * pur_xQ2[ix]) : 0.0;
+    }
+
+    auto build_xQ2_poly = [&](const char* hname, const char* htitle, const vector<double>& values) -> TH2Poly* {
+        TH2Poly *h = new TH2Poly();
+        h->SetName(hname);
+        h->SetTitle(htitle);
+
+        int global_bin = 1;
+        for (int ixb = 0; ixb < 5; ++ixb) {
+            for (size_t iq = 0; iq < binning_Q2_for_xB[ixb].size(); ++iq) {
+                double xlow  = bin_xB[ixb][0];
+                double xhigh = bin_xB[ixb][1];
+                double ylow  = binning_Q2_for_xB[ixb][iq][0];
+                double yhigh = binning_Q2_for_xB[ixb][iq][1];
+
+                int polyBin = h->AddBin(xlow, ylow, xhigh, yhigh);
+                if (global_bin >= 1 && global_bin <= nBin_xQ2) {
+                    h->SetBinContent(polyBin, values[global_bin - 1]);
+                }
+                global_bin++;
+            }
+        }
+        return h;
+    };
+
+    auto zrange_pos = [&](const vector<double>& values, double &zmin_pos, double &zmax) {
+        zmin_pos = 0.0;
+        zmax     = 0.0;
+        for (int i = 0; i < (int)values.size(); ++i) {
+            const double v = values[i];
+            if (v <= 0.0) continue;
+            if (zmin_pos == 0.0 || v < zmin_pos) zmin_pos = v;
+            if (v > zmax) zmax = v;
+        }
+    };
+
+    auto draw_bin_numbers_xQ2 = [&]() {
+        int bin_idx_txt = 1;
+        for (int ixb = 0; ixb < 5; ++ixb) {
+            for (size_t iq = 0; iq < binning_Q2_for_xB[ixb].size(); ++iq) {
+                double x_center = 0.5 * (bin_xB[ixb][0] + bin_xB[ixb][1]);
+                double y_center = 0.5 * (binning_Q2_for_xB[ixb][iq][0] + binning_Q2_for_xB[ixb][iq][1]);
+                TText *t = new TText(x_center, y_center, Form("%d", bin_idx_txt++));
+                t->SetTextAlign(22);
+                t->SetTextSize(0.03);
+                t->SetTextColor(kBlack);
+                t->Draw("same");
+            }
+        }
+    };
+
+    // --- (A) 1/(sqrt(N_mc)*efficiency)
+    TH2Poly *h_stat_over_eff = build_xQ2_poly(Form("%s_statOverEff_xQ2", tag.Data()),Form("1 / ( #sqrt{N_{MC}} #times efficiency )  |  %s ; x_{B}; Q^{2} [GeV^{2}]", label.Data()),statOverEff_xQ2);
+    h_stat_over_eff->SetStats(0);
+
+    double zmin_pos_eff, zmax_eff;
+    zrange_pos(statOverEff_xQ2, zmin_pos_eff, zmax_eff);
+
+    TCanvas *c_stat_over_eff = new TCanvas(Form("%s_c_statOverEff_xQ2", tag.Data()),Form("%s stat over efficiency", tag.Data()),800, 700
+    );
+    c_stat_over_eff->SetLogx();
+    c_stat_over_eff->SetLogy();
+    if (zmin_pos_eff > 0.0 && zmax_eff > 0.0) {
+        c_stat_over_eff->SetLogz();
+        h_stat_over_eff->SetMinimum(0.8 * zmin_pos_eff);
+        h_stat_over_eff->SetMaximum(1.2 * zmax_eff);
+    }
+    h_stat_over_eff->Draw("COLZ");
+    draw_bin_numbers_xQ2();
+
+    TLatex Text_ePIC_eff;
+    Text_ePIC_eff.SetTextSize(0.05);
+    Text_ePIC_eff.SetTextFont(62);
+    Text_ePIC_eff.DrawLatexNDC(.15,.88,"ePIC Preliminary");
+
+    TLatex Text_com_eff;
+    Text_com_eff.SetTextAlign(13);
+    if (inputDir && std::strstr(inputDir, "25.10_10x100")  != nullptr) Text_com_eff.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 63.2 GeV");
+    if (inputDir && std::strstr(inputDir, "25.10_18x275")  != nullptr) Text_com_eff.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 141 GeV");
+
+    TLatex Text_kinem_eff;
+    Text_kinem_eff.SetTextAlign(13);
+    Text_kinem_eff.SetTextSize(0.038);
+    Text_kinem_eff.DrawLatexNDC(.15,.78,"DIS kinematic: electron method reconstruction");
+
+    c_stat_over_eff->Update();
+    c_stat_over_eff->Write();
+
+    // --- (B) 1/(sqrt(N_sel)*purity)
+    TH2Poly *h_stat_over_pur = build_xQ2_poly(Form("%s_statOverPur_xQ2", tag.Data()),Form("1 / ( #sqrt{N_{sel}} #times purity )  |  %s ; x_{B}; Q^{2} [GeV^{2}]",label.Data()),statOverPur_xQ2);
+    h_stat_over_pur->SetStats(0);
+
+    double zmin_pos_pur, zmax_pur;
+    zrange_pos(statOverPur_xQ2, zmin_pos_pur, zmax_pur);
+
+    TCanvas *c_stat_over_pur = new TCanvas(Form("%s_c_statOverPur_xQ2", tag.Data()),Form("%s stat over purity", tag.Data()),800, 700);
+    c_stat_over_pur->SetLogx();
+    c_stat_over_pur->SetLogy();
+    if (zmin_pos_pur > 0.0 && zmax_pur > 0.0) {
+        c_stat_over_pur->SetLogz();
+        h_stat_over_pur->SetMinimum(0.8 * zmin_pos_pur);
+        h_stat_over_pur->SetMaximum(1.2 * zmax_pur);
+    }
+    h_stat_over_pur->Draw("COLZ");
+    draw_bin_numbers_xQ2();
+
+    TLatex Text_ePIC_pur;
+    Text_ePIC_pur.SetTextSize(0.05);
+    Text_ePIC_pur.SetTextFont(62);
+    Text_ePIC_pur.DrawLatexNDC(.15,.88,"ePIC Preliminary");
+
+    TLatex Text_com_pur;
+    Text_com_pur.SetTextAlign(13);
+    if (inputDir && std::strstr(inputDir, "25.10_10x100")  != nullptr) Text_com_pur.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 63.2 GeV");
+    if (inputDir && std::strstr(inputDir, "25.10_18x275")  != nullptr) Text_com_pur.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 141 GeV");
+
+    TLatex Text_kinem_pur;
+    Text_kinem_pur.SetTextAlign(13);
+    Text_kinem_pur.SetTextSize(0.038);
+    Text_kinem_pur.DrawLatexNDC(.15,.78,"DIS kinematic: electron method reconstruction");
+
+    c_stat_over_pur->Update();
+    c_stat_over_pur->Write();
+
+
+
+    //
     vector<TH2D*> hists_had = {
         &had_MomVsPhT, &had_MomVsXb, &had_MomVsXf, &had_MomVsZ, &had_MomVsY, &had_MomVsEta,
         &had_MomVsTheta, &had_MomVsPhi_h, &had_MomVsMx,
@@ -627,7 +794,6 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
         &had_zVsXb, &had_zVsXf, &had_zVsEta, &had_zVsPhi_h,
         &had_xBvsY, &had_ThetaVsPhi_h, &had_ThetaVsPhi_Lab,
     };
-
 
     // list to set the statbox2 on the canvas (suffix-based IDs)
     set<string> id_box2 = { "_MomVsXf", "_MomVsZ", "_MomVsY", "_MomVsEta", "_Q2VsXb", "_Q2VsY", "_zVsEta", "_zVsPhi_h", "_MomVsMass_RICH" };
@@ -668,8 +834,12 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
 
         TLatex Text_com;
         Text_com.SetTextAlign(13);
-        if (inputDirStr == "25.10_10x100") Text_com.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 63.2 GeV");
-        if (inputDirStr == "25.10_18x275") Text_com.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 141 GeV");
+        if (inputDir && std::strstr(inputDir, "25.10_10x100") != nullptr) Text_com.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 63.2 GeV");
+        if (inputDir && std::strstr(inputDir, "25.10_18x275") != nullptr) Text_com.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 141 GeV");
+        TLatex Text_kinem;
+        Text_kinem.SetTextAlign(13);
+        Text_kinem.SetTextSize(0.038);
+        Text_kinem.DrawLatexNDC(.15,.78,"DIS kinematic: electron method reconstruction");
 
         TLatex Text_date;
         Text_date.SetTextSize(0.035);
@@ -729,9 +899,14 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     //Text_ePIC.DrawLatexNDC(.15,.88,"ePIC"); // final published version
     TLatex Text_com;
     Text_com.SetTextAlign(13);
-    if (inputDirStr == "25.10_10x100") Text_com.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 63.2 GeV");
-    if (inputDirStr == "25.10_18x275") Text_com.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 141 GeV");
+    if (inputDir && std::strstr(inputDir, "25.10_10x100") != nullptr) Text_com.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 63.2 GeV");
+    if (inputDir && std::strstr(inputDir, "25.10_18x275") != nullptr) Text_com.DrawLatexNDC(.15,.85,"e+p, #sqrt{s} = 141 GeV");
     //Text_com.DrawLatexNDC(.15,.8,"L_{proj} = 10 fb^{-1}");
+    TLatex Text_kinem;
+    Text_kinem.SetTextAlign(13);
+    Text_kinem.SetTextSize(0.038);
+    Text_kinem.DrawLatexNDC(.15,.78,"DIS kinematic: electon method reconstruction");
+
     TLatex Text_date;
     Text_date.SetTextSize(0.035);
     Text_date.SetTextFont(52);
@@ -982,7 +1157,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
         // micro shift
         double dy = 0.0;
         if (val == 10.0)  dy = 0.1;   // higher
-        if (val == 100.0) dy = 0.08;    
+        if (val == 100.0) dy = 0.08;
         pos += dy;
 
         TLine *tick = new TLine(x_ndc_min, pos, x_ndc_min - 0.01, pos);
@@ -1039,7 +1214,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
             int idx = layout[iRow][iCol]; // idx is the bin index
             if (idx == 0) continue;
 
-	   
+
             // normalized coordinates: (x1,y1) bottom-left, (x2,y2) top-right
             double x1 = xMargin + iCol * padW;
             double x2 = x1 + padW;
@@ -1050,10 +1225,10 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
             // pìonly 1 pad
             TString padName = Form("%s_pad_r%d_c%d", tag.Data(), iRow, iCol);
 	    if (idx == 999) padName = Form("%s_inlet", tag.Data());
-	    
+
             c_layout->cd();
 
-      	    
+
             TPad *pad = new TPad(padName, padName, x1, y1, x2, y2);
             pad->SetRightMargin(idx == 999 ? 0.05 : 0.0);
             pad->SetLeftMargin(idx == 999 ? 0.12 : 0.0);
@@ -1062,7 +1237,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
             pad->Draw();
             pad->cd();
 
-	
+
 
             // Histogram draw (no colorbar)
 	    if (idx != 999){
@@ -1074,7 +1249,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
 	      hist_efficiency_xQ2_zPt_inlet->Draw("");
 	    }
 	      for (auto &rect : grid_zp) rect->DrawClone("same");
-	   
+
             // Come back to the canvas, before moving to the next pad
             c_layout->cd();
         }
@@ -1107,7 +1282,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     c_layout->Update();
 
     c_layout->cd();
-    TLatex *globalTitle = new TLatex(0.10, 0.95, Form("%s 4D Efficiency Distribution", label.Data()));
+    TLatex *globalTitle = new TLatex(0.07, 0.95, Form("%s 4D Efficiency Distribution", label.Data()));
     globalTitle->SetNDC(true);
     //globalTitle->SetTextFont(62);
     globalTitle->SetTextSize(0.04);
@@ -1212,11 +1387,11 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     xAxisLine->Draw();
     yAxisLine->Draw();
 
-    
+
 
     xlabel->Draw();
 
-    
+
 
     ylabel->Draw();
 
@@ -1278,7 +1453,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
 	      hist_purity_xQ2_zPt_inlet->SetTitle("");
 	      hist_purity_xQ2_zPt_inlet->Draw("");
 	    }
-	      
+
             for (auto &rect : grid_zp) rect->DrawClone("same");
             // Come back to the canvas, before moving to the next pad
             c_layout_all->cd();
@@ -1315,7 +1490,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     c_layout_all->Update();
 
     c_layout_all->cd();
-    TLatex *globalTitle_all = new TLatex(0.12, 0.95, Form("%s 4D Purity Distribution",label.Data()));
+    TLatex *globalTitle_all = new TLatex(0.08, 0.95, Form("%s 4D Purity Distribution",label.Data()));
     globalTitle_all->SetNDC(true);
     //globalTitle->SetTextFont(62);
     globalTitle_all->SetTextSize(0.04);
