@@ -155,7 +155,7 @@ int getBinIndex_Pt(double Pt){
 
 
 //------------- Main function
-void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100") {
+void relevant_plots(int target_pdg = -321, const char* inputDir = "25.10_10x100") {
 
     //---set_ePIC_style();
     gROOT->ProcessLine("set_ePIC_style()");
@@ -475,8 +475,10 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     // empty plots for inlet
     TH2D* hist_efficiency_xQ2_zPt_inlet = new TH2D("hist_efficiency4D_inlet", "hist_efficiency4D_inlet; z; P_{hT} [GeV]", 6, bin_z_plot, 5, bin_Pt_plot);
     TH2D* hist_purity_xQ2_zPt_inlet = new TH2D("hist_purity4D_inlet", "hist_purity4D_inlet; z; P_{hT} [GeV]", 6, bin_z_plot, 5, bin_Pt_plot);
+    TH2D* hist_ratio_xQ2_zPt_inlet = new TH2D("hist_ratio4D_inlet", "hist_ratio4D_inlet; z; P_{hT} [GeV]", 6, bin_z_plot, 5, bin_Pt_plot);
     hist_efficiency_xQ2_zPt_inlet->SetStats(0);
     hist_purity_xQ2_zPt_inlet->SetStats(0);
+    hist_ratio_xQ2_zPt_inlet->SetStats(0);
 
     // --- Filling of the graphs
     // Hadron of interest
@@ -1525,7 +1527,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
 
 
 	// ratio
-	// ratio
+    // ratio
     //--- purity
     double global_min_all_ratio = 1e9;
     double global_max_all_ratio = -1e9;
@@ -1541,9 +1543,6 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
         hist_ratio_xQ2_zPt[ix]->SetMinimum(0);
         hist_ratio_xQ2_zPt[ix]->SetMaximum(global_max_all_ratio);
     }
-
-    // exclude zmin = zmax
-    if (global_min_all == global_max_all) global_max_all = global_min_all + 1e-6;
 
     for (int ixQ2 = 0; ixQ2 < nBin_xQ2; ++ixQ2) {
         TCanvas *c_bin_zPt = new TCanvas(Form("%s c_ratio4D_xQ2_%d", tag.Data(), ixQ2+1), Form("%s Canvas %d", tag.Data(), ixQ2+1), 800, 800);
@@ -1594,7 +1593,6 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     }
 
 
-    //--- ratio plot for all bins
     TCanvas *c_layout_all_ratio = new TCanvas(Form("%s c_4D_ratio", tag.Data()), Form("%s All ratio bins", tag.Data()), 1800, 1200);
     c_layout_all_ratio->cd();
 
@@ -1607,11 +1605,11 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     xAxisLine->Draw();
     yAxisLine->Draw();
 
-    
+
 
     xlabel->Draw();
 
-    
+
 
     ylabel->Draw();
 
@@ -1637,6 +1635,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
             grid_zp.push_back(rect);
         }
     }
+
     // Loop and creation of the pads
     for (int iRow = 0; iRow < nRows; ++iRow) {
         for (int iCol = 0; iCol < nCols; ++iCol) {
@@ -1652,25 +1651,34 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
 
             // only 1 pad
             TString padName = Form("%s_pad_r%d_c%d", tag.Data(), iRow, iCol);
+	    if (idx == 999) padName = Form("%s_inlet", tag.Data());
             c_layout_all_ratio->cd();
 
             TPad *pad = new TPad(padName, padName, x1, y1, x2, y2);
-            pad->SetRightMargin(0.0);
-            pad->SetLeftMargin(0.0);
-            pad->SetBottomMargin(0.0);
+            pad->SetRightMargin(idx == 999 ? 0.05 : 0.0);
+            pad->SetLeftMargin(idx == 999 ? 0.12 : 0.0);
+            pad->SetBottomMargin(idx == 999 ? 0.12 : 0.0);
             pad->SetTopMargin(0.0);
             pad->SetLogz();
             pad->Draw();
             pad->cd();
 
             // Histogram draw (mo colorbar)
-            hist_ratio_xQ2_zPt[idx - 1]->SetTitle("");
-            hist_ratio_xQ2_zPt[idx - 1]->Draw("col"); // idx-1 perché vettore 0-based
+	    if (idx != 999){
+	      hist_ratio_xQ2_zPt[idx - 1]->SetTitle("");
+	      hist_ratio_xQ2_zPt[idx - 1]->Draw("col"); // idx-1 perché vettore 0-based
+	    }
+	    else{
+	      hist_ratio_xQ2_zPt_inlet->SetTitle("");
+	      hist_ratio_xQ2_zPt_inlet->Draw("");
+	    }
+
             for (auto &rect : grid_zp) rect->DrawClone("same");
             // Come back to the canvas, before moving to the next pad
             c_layout_all_ratio->cd();
         }
     }
+
     c_layout_all_ratio->Modified();
 
     TPad *pad_palette_all_ratio = new TPad(Form("%s_pad_palette_all_ratio",tag.Data()), "", 0.94, 0.1, 1, 0.9);
@@ -1702,7 +1710,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
     c_layout_all_ratio->Update();
 
     c_layout_all_ratio->cd();
-    TLatex *globalTitle_all_ratio = new TLatex(0.12, 0.95, Form("%s 4D Ratio Distribution",label.Data()));
+    TLatex *globalTitle_all_ratio = new TLatex(0.08, 0.95, Form("%s 4D Ratio Distribution",label.Data()));
     globalTitle_all_ratio->SetNDC(true);
     //globalTitle->SetTextFont(62);
     globalTitle_all_ratio->SetTextSize(0.04);
@@ -1721,6 +1729,7 @@ void relevant_plots(int target_pdg = 211, const char* inputDir = "25.10_10x100")
 
     c_layout_all_ratio->Update();
     c_layout_all_ratio->Write();
+
 
 
     //outFile.Write();
